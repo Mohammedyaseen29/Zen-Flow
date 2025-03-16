@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User{
+  id        Int @id @default(autoincrement())
+  email     String @unique
+  name      String?
+  password  String
+  flows     Flow[]
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model Flow{
+  id            String   @id @default(uuid())
+  name          String   @default("Untitled Flow")
+  description   String?
+  active        Boolean  @default(true)
+  userId        Int
+  user          User     @relation(fields: [userId],references: [id])
+  triggerId     String
+  trigger       Trigger?
+  action        Actions[]
+  flowState     FlowState[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Trigger{
+  id           String             @id @default(uuid())
+  metadata     Json               @default("{}")
+  flowId       String              @unique
+  flow         Flow               @relation(fields: [flowId],references: [id])
+  triggerId    String
+  type         AvailableTriggers   @relation(fields: [triggerId],references: [id])
+
+  @@index([flowId])
+  @@index([triggerId])
+}
+
+model Actions{
+  id            String             @id  @default(uuid())
+  metaData      Json               @default("{}")
+  flowId        String
+  flow          Flow                @relation(fields: [flowId],references: [id])
+  actionId      String
+  type          AvailableActions    @relation(fields: [actionId],references: [id])
+
+
+  @@index([flowId])
+  @@index([actionId])
+}
+
+model AvailableTriggers{
+  id          String          @id        @default(uuid())
+  name        String
+  image       String?
+  triggers    Trigger[]
+}
+
+model AvailableActions{
+  id        String          @id         @default(uuid())
+  name      String
+  image     String?
+  actions   Actions[]
+}
+
+model FlowState{
+  id                  String      @id       @default(uuid())
+  flowId              String
+  flow                Flow        @relation(fields: [flowId],references: [id])
+  status              String      @default("pending")
+  startedAt           DateTime    @default(now())
+  completedAt         DateTime?
+  metaData            Json
+  flowStateOutBox     FlowStateOutBox?
+  @@index([flowId])
+}
+
+model FlowStateOutBox{
+  id            String        @id       @default(uuid())
+  flowStateId   String        @unique
+  flowState     FlowState     @relation(fields: [flowStateId],references: [id])
+}
+
+
