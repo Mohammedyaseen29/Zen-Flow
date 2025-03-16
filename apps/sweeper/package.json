@@ -10,6 +10,10 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@repo/typescript-config":"workspace:*"
+    "@repo/typescript-config": "workspace:*"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "@repo/db": "workspace:*"
   }
 }
