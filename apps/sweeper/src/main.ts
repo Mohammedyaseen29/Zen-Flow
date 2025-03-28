@@ -1,15 +1,17 @@
-import {db} from "@repo/db";
+import {db} from "@repo/db/client";
 import { Kafka } from "kafkajs";
 
 const TOPIC_NAME = "flow-events"
 
-async function main(){
-    const kafka = new Kafka({
-        clientId: 'sweeper-outbox',
+const kafka = new Kafka({
+        clientId: 'outbox-processor',
         brokers: ['9092'],
-    })
+})
+
+async function main(){
     const producer = kafka.producer();
     await producer.connect();
+
 
     while(1){
         const pendingTask = await db.flowStateOutBox.findMany({
