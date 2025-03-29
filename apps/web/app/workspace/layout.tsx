@@ -6,8 +6,7 @@ export default function Workspacelayout({children}:{children:React.ReactNode}) {
     return (
         <SidebarProvider>
             <WorkspaceSidebar/>
-            <main>
-                <SidebarTrigger/>
+            <main className='w-full'>
                 {children}
             </main>
         </SidebarProvider>

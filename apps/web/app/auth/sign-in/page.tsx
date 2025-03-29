@@ -6,14 +6,11 @@
     import Image from "next/image"
     import logo from "@/public/logo.svg";
     import { signIn } from "next-auth/react";
-    import { useRef, useState } from "react"
 
     export default function SignIn() {
-        const emailRef = useRef<string>("")
-        const [isSubmitting,setSubmitting] = useState(false);
 
-        const handleGoogleSignin = ()=>{
-            signIn("google",{callbackUrl:"/workspace"})
+        const handleGoogleSignin = async()=>{
+            await signIn("google",{callbackUrl:"/workspace"})
         }
     return (
         <main className="min-h-screen flex flex-col items-center bg-gray-50">
