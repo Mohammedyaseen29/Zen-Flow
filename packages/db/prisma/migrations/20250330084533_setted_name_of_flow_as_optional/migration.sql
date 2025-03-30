@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Flow" ALTER COLUMN "name" DROP NOT NULL;

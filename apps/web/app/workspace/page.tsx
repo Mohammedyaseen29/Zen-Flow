@@ -25,16 +25,16 @@ export default function page() {
         <div>
             <SidebarTrigger/>
             <div className="p-8">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
                 <div>
-                    <h1 className="font-semibold text-3xl">All Workspaces</h1>
+                    <h1 className="font-semibold text-2xl sm:text-3xl text-center sm:text-left">All Workspaces</h1>
                 </div>
                 <div>
                     <FlowCreateButton/>
                 </div>
             </div>
             <div className="mt-3">
-                <p className="text-gray-400">Created Flows</p>
+                <p className="text-gray-400 text-center sm:text-left">Created Flows</p>
             </div>
                 <div className="grid mt-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-7xl mx-auto">
                         {flowBox && flowBox.length > 0 ? (

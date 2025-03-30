@@ -7,11 +7,36 @@ import { Avatar, AvatarImage } from "./ui/avatar";
 import { nextAuth } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import SignoutDropdown from "./SignoutDropdown";
+import { Home, LayoutTemplate, Search, Sparkles } from "lucide-react";
 
 
 
 export default async function WorkspaceSidebar() {
     const session = await getServerSession(nextAuth);
+
+    const items = [
+        {
+            title: "Home",
+            url:"/workspace",
+            icon:Home,
+        },
+        {
+            title:"Search",
+            url:"#",
+            icon:Search
+        },
+        {
+            title:"Ask Zen",
+            url:"/zen",
+            icon:Sparkles
+        },
+        {
+            title:"Templates",
+            url:"/templates",
+            icon:LayoutTemplate
+        }
+    ]
+
     return (
         <Sidebar>
             <SidebarHeader>
@@ -25,8 +50,18 @@ export default async function WorkspaceSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <SidebarGroup />
-                <SidebarGroup />
+                <SidebarMenu className="pl-4 mt-4">
+                    {items.map((item)=>(
+                        <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton asChild>
+                                <a href={item.url}>
+                                    <item.icon/>
+                                    <span>{item.title}</span>
+                                </a>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>
