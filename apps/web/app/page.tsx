@@ -1,103 +1,308 @@
-import Image from "next/image";
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Zap, ArrowRight, BarChart3, Clock, Users, Workflow, Code, Database } from "lucide-react"
+import logo from "@/public/logo.svg"
+import Image from "next/image"
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-40 w-full border-b bg-white px-4">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Image src={logo} alt="logo.svg" className="w-6 h-6"/>
+            <span className="text-xl font-bold">Zenflow</span>
+          </div>
+          <nav className="hidden md:flex gap-6">
+            <Link href="/" className="text-sm font-medium text-gray-600 hover:text-[#266DF0]">
+              Home
+            </Link>
+            <Link href="/how-it-works" className="text-sm font-medium text-gray-600 hover:text-[#266DF0]">
+              How It Works
+            </Link>
+            <Link href="/examples" className="text-sm font-medium text-gray-600 hover:text-[#266DF0]">
+              Examples
+            </Link>
+          </nav>
+          <div className="flex items-center gap-4">
+            <Link href="/auth/sign-in">
+              <Button className="bg-[#266DF0] hover:bg-[#1a5cd0]">Get Started</Button>
+            </Link>
+          </div>
         </div>
+      </header>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="w-full py-20 md:py-32 lg:py-40 border-b">
+          <div className="container px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
+                Build powerful automation flows with <span className="text-[#266DF0]">no code</span>
+              </h1>
+              <p className="mt-6 text-lg text-gray-600 md:text-xl">
+                Zenflow is an intuitive visual builder that lets you create complex automation workflows in minutes, not
+                days.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+                <Link href="/auth/sign-in">
+                  <Button className="bg-[#266DF0] hover:bg-[#1a5cd0] h-12 px-8 text-base">Start building for free</Button>
+                </Link>
+                <Button variant="outline" className="border-[#266DF0] text-[#266DF0] h-12 px-8 text-base">
+                  <Link href="/how-it-works" className="flex items-center gap-2">
+                    How it works <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className="w-full py-16 md:py-24 bg-gray-50">
+          <div className="container px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                Everything you need to automate your workflow
+              </h2>
+              <p className="mt-4 text-gray-600">
+                Zenflow combines powerful features with an intuitive interface to make automation accessible to
+                everyone.
+              </p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  icon: <Workflow className="h-8 w-8 text-[#266DF0]" />,
+                  title: "Visual Flow Builder",
+                  description:
+                    "Drag-and-drop interface to create complex workflows without writing a single line of code.",
+                },
+                {
+                  icon: <Code className="h-8 w-8 text-[#266DF0]" />,
+                  title: "Custom Logic",
+                  description:
+                    "Add conditional logic, loops, and transformations to handle complex business processes.",
+                },
+                {
+                  icon: <Database className="h-8 w-8 text-[#266DF0]" />,
+                  title: "Data Integration",
+                  description: "Connect to any data source with our extensive library of pre-built connectors.",
+                },
+                {
+                  icon: <Clock className="h-8 w-8 text-[#266DF0]" />,
+                  title: "Scheduled Triggers",
+                  description: "Set workflows to run on schedules, from simple intervals to complex cron expressions.",
+                },
+                {
+                  icon: <BarChart3 className="h-8 w-8 text-[#266DF0]" />,
+                  title: "Real-time Analytics",
+                  description: "Monitor performance and get insights into your automation with detailed analytics.",
+                },
+                {
+                  icon: <Users className="h-8 w-8 text-[#266DF0]" />,
+                  title: "Team Collaboration",
+                  description: "Work together with your team to build, test, and deploy automation workflows.",
+                },
+              ].map((feature, i) => (
+                <div key={i} className="flex flex-col p-6 bg-white rounded-lg border shadow-sm hover:scale-105 transition">
+                  <div className="mb-4">{feature.icon}</div>
+                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Preview */}
+        <section className="w-full py-16 md:py-24">
+          <div className="container px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">How Zenflow Works</h2>
+              <p className="mt-4 text-gray-600">Create powerful automation workflows in three simple steps.</p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-3">
+              {[
+                {
+                  step: "01",
+                  title: "Design Your Flow",
+                  description:
+                    "Drag and drop nodes to create your workflow. Connect triggers, actions, and conditions to build your automation logic.",
+                },
+                {
+                  step: "02",
+                  title: "Configure & Test",
+                  description:
+                    "Configure each node with your specific parameters. Test your workflow in real-time to ensure it works as expected.",
+                },
+                {
+                  step: "03",
+                  title: "Deploy & Monitor",
+                  description:
+                    "Deploy your workflow with a single click. Monitor performance and receive alerts if anything goes wrong.",
+                },
+              ].map((step, i) => (
+                <div key={i} className="flex flex-col items-center text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#266DF0] text-xl font-bold text-white mb-4">
+                    {step.step}
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-gray-600">{step.description}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-12 text-center">
+              <Button className="bg-[#266DF0] hover:bg-[#1a5cd0]">
+                <Link href="/how-it-works">Learn more about how it works</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="w-full py-16 md:py-24 bg-gray-50">
+          <div className="container px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Trusted by innovative teams</h2>
+              <p className="mt-4 text-gray-600">See what our customers have to say about Zenflow.</p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  quote:
+                    "Zenflow has transformed how we handle our internal processes. What used to take days now happens automatically.",
+                  author: "Sarah Johnson",
+                  role: "Operations Manager, TechCorp",
+                },
+                {
+                  quote:
+                    "The visual interface makes it easy for non-technical team members to create and modify workflows. Game changer!",
+                  author: "Michael Chen",
+                  role: "CTO, GrowthStartup",
+                },
+                {
+                  quote: "We've reduced manual data entry by 85% since implementing Zenflow across our organization.",
+                  author: "Emily Rodriguez",
+                  role: "Project Manager, CreativeAgency",
+                },
+              ].map((testimonial, i) => (
+                <div key={i} className="flex flex-col justify-between p-6 bg-white rounded-lg border shadow-sm">
+                  <p className="italic text-gray-600 mb-4">"{testimonial.quote}"</p>
+                  <div>
+                    <p className="font-medium">{testimonial.author}</p>
+                    <p className="text-sm text-gray-500">{testimonial.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="w-full py-16 md:py-24">
+          <div className="container px-4 md:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Ready to automate your workflow?</h2>
+              <p className="mt-4 text-gray-600">
+                Start building powerful automation flows today. No credit card required.
+              </p>
+              <div className="mt-8">
+                <Link href="/auth/sign-in">
+                  <Button className="bg-[#266DF0] hover:bg-[#1a5cd0] h-12 px-8 text-base">Get started for free</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      <footer className="w-full border-t bg-white py-8">
+        <div className="container px-4 md:px-6">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Image src={logo} alt="logo.svg" className="w-6 h-6"/>
+                <span className="text-xl font-bold">Zenflow</span>
+              </div>
+              <p className="text-sm text-gray-600">The visual automation platform for modern teams.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Product</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/features" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/how-it-works" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    How it works
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/examples" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Examples
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Resources</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="#" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Documentation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Community
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="#" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="text-sm text-gray-600 hover:text-[#266DF0]">
+                    Careers
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 border-t pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-xs text-gray-500">© {new Date().getFullYear()} Zenflow. All rights reserved.</p>
+            <div className="flex gap-4 mt-4 md:mt-0">
+              <Link href="#" className="text-xs text-gray-500 hover:text-[#266DF0]">
+                Terms
+              </Link>
+              <Link href="#" className="text-xs text-gray-500 hover:text-[#266DF0]">
+                Privacy
+              </Link>
+              <Link href="#" className="text-xs text-gray-500 hover:text-[#266DF0]">
+                Cookies
+              </Link>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
-  );
+  )
 }
+
