@@ -1,13 +1,14 @@
     import { Plus } from 'lucide-react';
+import Image from 'next/image';
 
     type SidebarProps = {
-    availableTriggers: Array<{ id: string; label: string; icon: string }>;
-    availableActions: Array<{ id: string; label: string; icon: string }>;
+    availableTriggers: Array<{ id: string; name: string; image: string }>;
+    availableActions: Array<{ id: string; name: string; image: string }>;
     onSelectTrigger: (id: string) => void;
     onAddAction: (id: string) => void;
-    selectedTrigger: { id: string; label: string; icon: string } | null;
+    selectedTrigger: { id: string; label: string; image: string } | null;
     };
-
+    
     export default function Sidebar({
     availableTriggers,
     availableActions,
@@ -32,10 +33,10 @@
                 }`}
                 onClick={() => onSelectTrigger(trigger.id)}
                 >
-                <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center mr-2">
-                    <span className="text-xs font-bold">{trigger.icon[0].toUpperCase()}</span>
+                <div className='flex items-center gap-x-1'>
+                        <Image src={trigger.image} alt='trigger.png' width={20} height={20}/>
+                        <p>{trigger.name}</p>
                 </div>
-                {trigger.label}
                 </button>
             ))}
             </div>
@@ -53,13 +54,11 @@
                 onClick={() => selectedTrigger && onAddAction(action.id)}
                 disabled={!selectedTrigger}
                 >
-                <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center mr-2">
-                    <span className="text-xs font-bold">{action.icon[0].toUpperCase()}</span>
+                <div className='flex items-center gap-x-1'>
+                        <Image src={action.image} alt='trigger.png' width={20} height={20}/>
+                        <p className='text-sm font-semibold'>{action.name}</p>
                 </div>
-                <span className="flex-grow">{action.label}</span>
-                {selectedTrigger && (
-                    <Plus size={16} className="text-gray-400" />
-                )}
+                
                 </button>
             ))}
             </div>

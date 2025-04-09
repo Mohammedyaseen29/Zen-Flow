@@ -1,6 +1,6 @@
     "use client";
     
-    import { useState, useCallback, useRef } from 'react';
+    import { useState, useCallback, useRef, useEffect } from 'react';
     import {
     ReactFlow,
     Background,
@@ -19,20 +19,20 @@
     import TriggerNode from '@/components/node/TriggerNode';
     import ActionNode from '@/components/node/ActionNode';
     import Sidebar from '@/components/Sidebar';
+    import axios from 'axios';
+    import logo from "@/public/logo.svg"
+    import Image from 'next/image';
 
-    // Define available triggers and actions
-    const availableTriggers = [
-    { id: 'new_email', label: 'New Email', icon: 'mail' },
-    { id: 'new_contact', label: 'New Contact', icon: 'user' },
-    { id: 'new_form_entry', label: 'New Form Entry', icon: 'file-text' },
-    ];
-
-    const availableActions = [
-    { id: 'send_email', label: 'Send Email', icon: 'send' },
-    { id: 'update_contact', label: 'Update Contact', icon: 'user-check' },
-    { id: 'create_task', label: 'Create Task', icon: 'check-square' },
-    { id: 'notify', label: 'Send Notification', icon: 'bell' },
-    ];
+    interface Trigger{
+        id:string,
+        name:string,
+        image:string
+    }
+    interface Action{
+        id:string,
+        name:string,
+        image:string
+    }
 
     // Define node types for React Flow
     const nodeTypes = {
@@ -42,21 +42,51 @@
 
     export default function FlowBuilder() {
     // State for nodes and edges
-    const [nodes, setNodes] = useState<Node[]>([
-        {
-        id: 'trigger-1',
-        type: 'triggerNode',
-        position: { x: 250, y: 50 },
-        data: { label: 'Select a Trigger', icon: 'play', options: availableTriggers, onSelectTrigger },
-        },
-    ]);
-    
+    const [availableTriggers, setAvailableTriggers] = useState<Trigger[]>();
+    const [availableActions, setAvailableActions] = useState<Action[]>();
+    const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedTrigger, setSelectedTrigger] = useState();
+    const [loading,setLoading] = useState(false);
     const nextNodeId = useRef(1);
+
+    const fetchData = async ()=>{
+        try {
+            setLoading(true);
+            const availableTriggersData = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/availableTriggers`)
+            const availableActionsData = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/availableActions`);
+            setAvailableTriggers(availableTriggersData.data);
+            setAvailableActions(availableActionsData.data);
+            setNodes([
+                {
+                    id:"trigger-1",
+                    type: 'triggerNode',
+                    position: { x: 250, y: 50 },
+                    data:{
+                        label: 'Select a trigger',
+                        icon: 'play',
+                        options: availableTriggersData.data,
+                        onSelectTrigger,
+                    }
+                }
+            ])
+        } catch (error) {
+            console.log(error);
+            setLoading(false);
+        }finally{
+            setLoading(false);
+        }
+    };
+
+    useEffect(()=>{
+        fetchData();
+    },[]);
 
     // Handle trigger selection
     function onSelectTrigger(triggerId: string) {
+        if(!availableTriggers){
+            return;
+        }
         const trigger = availableTriggers.find(t => t.id === triggerId);
         if (trigger) {
         setSelectedTrigger(trigger as any);
@@ -69,8 +99,8 @@
                 ...node,
                 data: {
                     ...node.data,
-                    label: trigger.label,
-                    icon: trigger.icon,
+                    label: trigger.name,
+                    icon: trigger.image,
                     selected: true,
                     triggerId: trigger.id,
                     options: availableTriggers,
@@ -90,6 +120,9 @@
         alert('Please select a trigger first');
         return;
         }
+        if(!availableActions){
+            return;
+        }
 
         const action = availableActions.find(a => a.id === actionId);
         if (!action) return;
@@ -106,8 +139,8 @@
         type: 'actionNode',
         position: { x: 250, y: yOffset },
         data: { 
-            label: action.label, 
-            icon: action.icon, 
+            label: action.name, 
+            icon: action.image, 
             actionId: action.id,
             onDelete: () => deleteNode(newNodeId),
             options: availableActions,
@@ -135,6 +168,9 @@
 
     // Update an action node
     const updateActionNode = useCallback((nodeId: string, actionId: string) => {
+        if(!availableActions){
+            return;
+        }
         const action = availableActions.find(a => a.id === actionId);
         if (!action) return;
 
@@ -145,8 +181,8 @@
                 ...node,
                 data: {
                 ...node.data,
-                label: action.label,
-                icon: action.icon,
+                label: action.name,
+                icon: action.image,
                 actionId: action.id,
                 },
             };
@@ -174,9 +210,10 @@
         if (remainingNodes.length > 1) {
         // Find index of deleted node
         const nodeIndex = nodes.findIndex(node => node.id === nodeId);
+        console.log(nodeIndex)
         
-        // If it's not the last node, reconnect the gap
-        if (nodeIndex < nodes.length - 1) {
+        // If it's not the last node and first, reconnect the gap
+        if (nodeIndex > 0 && nodeIndex < nodes.length - 1) {
             const prevNodeId = nodeIndex === 1 ? 'trigger-1' : nodes[nodeIndex - 1].id;
             const nextNodeId = nodes[nodeIndex + 1].id;
             
@@ -229,6 +266,13 @@
         },
         []
     );
+    if(loading){
+        return(
+            <div className='flex justify-center items-center h-screen'>
+                <Image src={logo} alt='logo.svg' className='w-10 h-10 animate-bounce'/>
+            </div>
+        )
+    }
 
     return (
         <div className="flex h-screen">
@@ -247,8 +291,8 @@
             </ReactFlow>
         </div>
         <Sidebar 
-            availableTriggers={availableTriggers}
-            availableActions={availableActions}
+            availableTriggers={availableTriggers || []}
+            availableActions={availableActions || []}
             onSelectTrigger={onSelectTrigger}
             onAddAction={addActionNode}
             selectedTrigger={selectedTrigger || null}

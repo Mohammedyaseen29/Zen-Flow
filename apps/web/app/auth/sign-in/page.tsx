@@ -21,7 +21,6 @@
             <span className="text-xl font-bold">Zenflow</span>
             </div>
         </div>
-
         {/* Main content */}
         <div className="w-full max-w-6xl px-4 flex-1 flex items-center justify-center">
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-5xl flex flex-col md:flex-row overflow-hidden">

@@ -2,12 +2,13 @@
     import { Handle, Position } from '@xyflow/react';
     import { useState } from 'react';
     import { ChevronDown, ChevronUp } from 'lucide-react';
+import Image from 'next/image';
 
     type TriggerNodeProps = {
     data: {
         label: string;
         icon: string;
-        options: Array<{ id: string; label: string; icon: string }>;
+        options: Array<{ id: string; name: string; image: string }>;
         onSelectTrigger: (id: string) => void;
         selected?: boolean;
         triggerId?: string;
@@ -28,7 +29,7 @@
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                 </svg>
                 ) : (
-                <span className="text-sm font-bold">{data.icon[0].toUpperCase()}</span>
+                <span className="text-sm font-bold">{data.label[0].toUpperCase()}</span>
                 )}
             </div>
             <div>
@@ -57,8 +58,10 @@
                     setIsOpen(false);
                     }}
                 >
-                    <span className="mr-2">{option.icon[0].toUpperCase()}</span>
-                    {option.label}
+                    <div className='flex items-center gap-x-1'>
+                        <Image src={option.image} alt='trigger.png' width={20} height={20}/>
+                        <p>{option.name}</p>
+                    </div>
                 </button>
                 ))}
             </div>

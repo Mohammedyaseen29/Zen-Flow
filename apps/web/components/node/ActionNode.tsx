@@ -1,6 +1,7 @@
     import { Handle, Position } from '@xyflow/react';
     import { useState } from 'react';
     import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import Image from 'next/image';
 
     type ActionNodeProps = {
     data: {
@@ -8,7 +9,7 @@
         icon: string;
         actionId: string;
         onDelete: () => void;
-        options: Array<{ id: string; label: string; icon: string }>;
+        options: Array<{ id: string; name: string; image: string }>;
         onSelectAction: (id: string) => void;
     };
     isConnectable: boolean;
@@ -22,7 +23,7 @@
         <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
             <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center">
-                <span className="text-sm font-bold">{data.icon[0].toUpperCase()}</span>
+                <span className="text-sm font-bold">{data.label[0].toUpperCase()}</span>
             </div>
             <div>
                 <h3 className="font-semibold text-gray-800">Action</h3>
@@ -60,8 +61,10 @@
                     setIsOpen(false);
                     }}
                 >
-                    <span className="mr-2">{option.icon[0].toUpperCase()}</span>
-                    {option.label}
+                    <div className='flex items-center gap-x-1'>
+                        <Image src={option.image} alt='trigger.png' width={20} height={20}/>
+                        <p>{option.name}</p>
+                    </div>
                 </button>
                 ))}
             </div>

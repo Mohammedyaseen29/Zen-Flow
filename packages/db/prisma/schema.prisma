@@ -109,7 +109,7 @@ model AvailableActions{
 }
 
 model FlowState{
-  id                  String      @id       @default(uuid())
+  id                  String      @id      @default(uuid())
   flowId              String
   flow                Flow        @relation(fields: [flowId],references: [id])
   status              String      @default("pending")
