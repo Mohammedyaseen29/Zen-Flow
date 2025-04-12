@@ -17,7 +17,6 @@ import Image from 'next/image';
     };
 
     export default function TriggerNode({ data, isConnectable }: TriggerNodeProps) {
-    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <div className="border-2 border-blue-500 bg-white rounded-lg shadow-md p-4 w-64">
@@ -37,37 +36,7 @@ import Image from 'next/image';
                 <p className="text-sm text-gray-600">{data.label}</p>
             </div>
             </div>
-            <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-gray-500 hover:text-blue-500"
-            >
-            {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </button>
         </div>
-        
-        {isOpen && !data.selected && (
-            <div className="mt-2 border-t pt-2">
-            <p className="text-sm text-gray-600 mb-2">Choose a trigger:</p>
-            <div className="space-y-1 max-h-40 overflow-y-auto">
-                {data.options.map((option) => (
-                <button
-                    key={option.id}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 rounded-md flex items-center"
-                    onClick={() => {
-                    data.onSelectTrigger(option.id);
-                    setIsOpen(false);
-                    }}
-                >
-                    <div className='flex items-center gap-x-1'>
-                        <Image src={option.image} alt='trigger.png' width={20} height={20}/>
-                        <p>{option.name}</p>
-                    </div>
-                </button>
-                ))}
-            </div>
-            </div>
-        )}
-
         <Handle
             type="source"
             position={Position.Bottom}

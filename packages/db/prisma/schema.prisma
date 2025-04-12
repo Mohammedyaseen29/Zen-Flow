@@ -98,6 +98,7 @@ model AvailableTriggers{
   id          String          @id        @default(uuid())
   name        String
   image       String?
+  fields      Json           @default("[]")
   triggers    Trigger[]
 }
 
@@ -105,6 +106,7 @@ model AvailableActions{
   id        String          @id         @default(uuid())
   name      String
   image     String?
+  fields    Json           @default("[]")
   actions   Actions[]
 }
 

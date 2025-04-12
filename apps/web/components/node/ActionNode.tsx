@@ -16,7 +16,6 @@ import Image from 'next/image';
     };
 
     export default function ActionNode({ data, isConnectable }: ActionNodeProps) {
-    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <div className="border-2 border-green-500 bg-white rounded-lg shadow-md p-4 w-64">
@@ -32,12 +31,6 @@ import Image from 'next/image';
             </div>
             <div className="flex items-center">
             <button 
-                onClick={() => setIsOpen(!isOpen)}
-                className="text-gray-500 hover:text-green-500 mr-2"
-            >
-                {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </button>
-            <button 
                 onClick={data.onDelete}
                 className="text-gray-500 hover:text-red-500"
             >
@@ -45,31 +38,6 @@ import Image from 'next/image';
             </button>
             </div>
         </div>
-        
-        {isOpen && (
-            <div className="mt-2 border-t pt-2">
-            <p className="text-sm text-gray-600 mb-2">Choose an action:</p>
-            <div className="space-y-1 max-h-40 overflow-y-auto">
-                {data.options.map((option) => (
-                <button
-                    key={option.id}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-green-50 rounded-md flex items-center ${
-                    option.id === data.actionId ? 'bg-green-50 font-medium' : ''
-                    }`}
-                    onClick={() => {
-                    data.onSelectAction(option.id);
-                    setIsOpen(false);
-                    }}
-                >
-                    <div className='flex items-center gap-x-1'>
-                        <Image src={option.image} alt='trigger.png' width={20} height={20}/>
-                        <p>{option.name}</p>
-                    </div>
-                </button>
-                ))}
-            </div>
-            </div>
-        )}
 
         <Handle
             type="target"

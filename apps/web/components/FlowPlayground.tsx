@@ -98,7 +98,6 @@
                 return {
                 ...node,
                 data: {
-                    ...node.data,
                     label: trigger.name,
                     icon: trigger.image,
                     selected: true,
