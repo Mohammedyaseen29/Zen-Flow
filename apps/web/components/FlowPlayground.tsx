@@ -13,7 +13,8 @@
     EdgeChange,
     Connection,
     addEdge,
-    MarkerType
+    MarkerType,
+    useOnSelectionChange,
     } from '@xyflow/react';
     import '@xyflow/react/dist/style.css';
     import TriggerNode from '@/components/node/TriggerNode';
@@ -22,6 +23,8 @@
     import axios from 'axios';
     import logo from "@/public/logo.svg"
     import Image from 'next/image';
+    import {debounce, set} from 'lodash';
+
 
     interface Trigger{
         id:string,
@@ -33,6 +36,11 @@
         name:string,
         image:string
     }
+    interface selectedNode{
+            id: string;
+            type: "action" | "trigger";
+            data: any; 
+    }
 
     // Define node types for React Flow
     const nodeTypes = {
@@ -40,15 +48,89 @@
     actionNode: ActionNode,
     };
 
-    export default function FlowBuilder() {
+    export default function FlowBuilder({flowId}:{flowId:string}) {
     // State for nodes and edges
     const [availableTriggers, setAvailableTriggers] = useState<Trigger[]>();
     const [availableActions, setAvailableActions] = useState<Action[]>();
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedTrigger, setSelectedTrigger] = useState();
+    const [actionMetaData,setActionMetaData] = useState<Record<string,Record<string,any>>>({});
+    const [flowName,setFlowName] = useState<string>("Untittled Flow");
+    const [selectedNode,setSelectedNode] = useState<selectedNode|null>(null);
+    const [saving,setSaving] = useState(false); 
+    const [hasChanges,setHasChanges] = useState<boolean>(false);
     const [loading,setLoading] = useState(false);
+    const [initialLoadCompleted,setInitialLoadCompleted] = useState<boolean>(false);
     const nextNodeId = useRef(1);
+
+    useOnSelectionChange({
+        onChange:async ({node}:any)=>{
+            if(node.length == 1){
+                setSelectedNode(node[0]);
+                if(selectedNode?.type === 'action'){
+                    const actionId = selectedNode.data?.actionId;
+                    if(actionId && !actionMetaData.actionId){
+                        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/actions/${actionId}/metadata`,{params:{flowId}});
+                        setActionMetaData((prev)=>({
+                            ...prev,
+                            [actionId as string]:res.data,
+                        }))
+                    }
+                }
+            }
+
+            else{
+                setSelectedNode(null);
+            }
+        }
+    })
+    
+    const saveFlowToDatabase = async ()=>{
+        try {
+            setSaving(true);
+
+            const triggerNode = nodes.find(node=>node.id === 'trigger-1');
+            const triggerData = {
+                triggerId: triggerNode?.data?.triggerId,
+                metaData: {},
+            }
+            const actionData = nodes.filter(node=>node.id.startsWith('action-1'))
+            .map((node)=>(
+                {
+                    actionId: node.data.actionId,
+                    metaData: actionMetaData[node.data.actionId as string] || {},
+                }
+            ))
+            const position = {};
+
+            nodes.forEach(node=>{
+                (position as Record<string, { x: number; y: number }>)[node.id] = node.position;
+            })
+            localStorage.setItem(`flow-position-${flowId}`,JSON.stringify(position));
+            await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/flows/${flowId}`,{
+                name:flowName,
+                trigger:triggerData,
+                actions:actionData,
+            })
+            setHasChanges(false);
+
+
+        } catch (error) {
+            console.log(error);
+        }
+        finally{
+            setSaving(false);
+        }
+    }
+    
+
+    const debouncedSaveFlow = useRef(
+        debounce(async function(){
+            console.log("Auto saving...");
+            await saveFlowToDatabase();
+        },3000)
+    ).current;
 
     const fetchData = async ()=>{
         try {
@@ -80,7 +162,119 @@
 
     useEffect(()=>{
         fetchData();
+        return ()=>{
+            debouncedSaveFlow.flush();
+        }
     },[]);
+
+    const loadFlowFromDatabase = async ()=>{
+        try {
+            setLoading(true);
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/flows/${flowId}`);
+            const flowData = response.data;
+            setFlowName(flowData.name);
+            let nodePositions = {};
+            try {
+                const savedPositions = localStorage.getItem(`flow-positions-${flowId}`);
+                if (savedPositions) {
+                    nodePositions = JSON.parse(savedPositions);
+                }
+            } catch (error) {
+                console.error("Error loading positions from localStorage:", error);
+            }
+            const newNodes = [];
+            if(flowData.trigger){
+                const trigger = availableTriggers?.find(t=>t.id === flowData.trigger.triggerId)
+                if(trigger){
+                    setSelectedTrigger(trigger as any);
+                    newNodes.push({
+                        id: 'trigger-1',
+                        type: 'triggerNode',
+                        position: (nodePositions as Record<string, { x: number; y: number }>)['trigger-1'] || { x: 250, y: 50 },
+                        data: {
+                            label: trigger.name,
+                            icon: trigger.image,
+                            selected: true,
+                            triggerId: trigger.id,
+                            options: availableTriggers,
+                            onSelectTrigger,
+                        },
+                    });
+                }
+            }else{
+                newNodes.push({
+                    id: 'trigger-1',
+                    type: 'triggerNode',
+                    position: (nodePositions as Record<string,{x:number,y:number}>)['trigger-1'] || { x: 250, y: 50 },
+                    data: {
+                        label: 'Select a trigger',
+                        icon: 'play',
+                        options: availableTriggers,
+                        onSelectTrigger,
+                    }
+                });
+            }
+            const newEdges: Edge[] = [];
+            let lastNodeId = 'trigger-1';
+            
+            if (flowData.actions && flowData.actions.length > 0) {
+                // Sort actions by their ID or other criteria if needed
+                // This assumes actions are returned in the correct order
+                flowData.actions.forEach((action:any, index:number) => {
+                    const actionData = availableActions?.find(a => a.id === action.actionId);
+                    if (actionData) {
+                        const nodeId = `action-${index + 1}`;
+                        
+                        // Update nextNodeId ref to ensure new nodes get correct IDs
+                        if (index + 1 >= nextNodeId.current) {
+                            nextNodeId.current = index + 2;
+                        }
+                        
+                        // Create action node
+                        newNodes.push({
+                            id: nodeId,
+                            type: 'actionNode',
+                            position: (nodePositions as Record<string,{x:number,y:number}>)[nodeId] || { x: 250, y: 150 + index * 150 },
+                            data: { 
+                                label: actionData.name, 
+                                icon: actionData.image, 
+                                actionId: actionData.id,
+                                onDelete: () => deleteNode(nodeId),
+                                options: availableActions,
+                                onSelectAction: (id: string) => updateActionNode(nodeId, id)
+                            },
+                        });
+                        
+                        // Create edge connecting to previous node
+                        newEdges.push({
+                            id: `e-${lastNodeId}-${nodeId}`,
+                            source: lastNodeId,
+                            target: nodeId,
+                            type: 'smoothstep',
+                            markerEnd: { type: MarkerType.ArrowClosed },
+                            style: { strokeWidth: 2 }
+                        });
+                        
+                        lastNodeId = nodeId;
+                        if(action.metaData){
+                            setActionMetaData((prev)=>({
+                                ...prev,
+                                [nodeId]:action.metaData,
+                            }))
+                        }
+                    }
+                });
+            }
+            setNodes(newNodes);
+            setEdges(newEdges);
+            setInitialLoadCompleted(true);
+        } catch (error) {
+            console.log(error);
+        }
+        finally{
+            setLoading(false);
+        }
+    }
 
     // Handle trigger selection
     function onSelectTrigger(triggerId: string) {
@@ -265,6 +459,14 @@
         },
         []
     );
+    const onUpdateActionMetadata = useCallback((nodeId:string,actionId:string,metaData:Record<string,any>)=>{
+        setActionMetaData(prev=>({
+            ...prev,
+            [actionId]:metaData,
+        }))
+        setHasChanges(true);
+        debouncedSaveFlow();
+    },[])
     if(loading){
         return(
             <div className='flex justify-center items-center h-screen'>
@@ -276,6 +478,11 @@
     return (
         <div className="flex h-screen">
         <div className="flex-grow h-full">
+            {saving && (
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-md text-sm">
+                        Saving...
+                    </div>
+            )}
             <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -294,7 +501,10 @@
             availableActions={availableActions || []}
             onSelectTrigger={onSelectTrigger}
             onAddAction={addActionNode}
+            selectedNode={selectedNode || null}
+            onUpdateActionMetadata={onUpdateActionMetadata}
             selectedTrigger={selectedTrigger || null}
+            actionMetaData={actionMetaData}
         />
         </div>
     );

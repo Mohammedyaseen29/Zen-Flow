@@ -90,7 +90,8 @@ export default function ActionConfig({actionId,onSaveConfig,existingMetadata}:Ac
                                 className="w-full p-2 border rounded-md"
                                 value={values[f.name]?? ""}
                                 onChange={(e)=>handleChange(f.name,e.target.value)}
-                                >
+                                >   
+                                    <option value="">{"Select an option"}</option>
                                     {f.option?.map((o)=>(
                                         <option key={o.value} value={o.value}>{o.label}</option>
                                     ))}

@@ -1,6 +1,6 @@
     import { Plus } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ActionConfig from './ActionConfig';
 import { metadata } from '@/app/layout';
 
@@ -27,6 +27,11 @@ import { metadata } from '@/app/layout';
     }: SidebarProps) {
         
     const [activeTab,setActiveTab] = useState<"components" | "configure">("components");
+    useEffect(()=>{
+        if(selectedNode){
+            setActiveTab("configure");
+        }
+    },[selectedNode])
 
     return (
         <div className="w-64 bg-gray-50 border-l p-4 overflow-y-auto">
