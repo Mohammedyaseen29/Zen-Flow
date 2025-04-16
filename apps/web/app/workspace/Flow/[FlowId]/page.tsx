@@ -1,14 +1,15 @@
-import FlowPlayground from "@/components/FlowPlayground";
+import WorkflowBuilder from "@/components/WorkflowBuilder";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 
 export default function page({params}:{params:{FlowId:string}}) {
     const flowId = params.FlowId;
+    console.log(flowId);
 
     return (
         <div>
             <SidebarTrigger/>
-            <FlowPlayground flowId={flowId}/>
+            <WorkflowBuilder flowId={flowId}/>
         </div>
     )
 }

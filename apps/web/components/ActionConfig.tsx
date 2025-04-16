@@ -26,7 +26,7 @@ export default function ActionConfig({actionId,onSaveConfig,existingMetadata}:Ac
     const fetchField = async () => {
         try {
             setLoading(true);
-            const Fetchedfield = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/action/${actionId}/field`)
+            const Fetchedfield = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/actions/${actionId}/field`)
             setField(Fetchedfield.data);
         } catch (error) {
             console.log(error);

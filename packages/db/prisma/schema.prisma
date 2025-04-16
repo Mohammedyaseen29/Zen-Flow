@@ -72,7 +72,7 @@ model Flow{
 model Trigger{
   id           String             @id @default(uuid())
   metadata     Json               @default("{}")
-  flowId       String              @unique
+  flowId       String             @unique
   flow         Flow               @relation(fields: [flowId],references: [id])
   triggerId    String
   type         AvailableTriggers   @relation(fields: [triggerId],references: [id])
