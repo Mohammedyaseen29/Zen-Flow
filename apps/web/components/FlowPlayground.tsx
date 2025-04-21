@@ -88,28 +88,40 @@
     }, [nodes, edges, actionMetaData]);
 
     useOnSelectionChange({
-        onChange:async ({nodes}:any)=>{
-            if(nodes.length == 1){
-                const currentNode = nodes[0];
-                setSelectedNode(currentNode);
-                
-                if(currentNode.type === 'action'){
-                    const actionId = currentNode.data?.actionId;
-                    const nodeId = currentNode.id;
-                    if(actionId && !actionMetaData[nodeId]){
-                        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/actions/${actionId}/metadata`,{params:{flowId}});
-                        setActionMetaData((prev)=>({
-                            ...prev,
-                            [nodeId]:res.data,
-                        }))
-                        setHasChanges(true);
-                    }
-                }
+    onChange: async ({nodes}) => {
+        if(nodes.length === 1) {
+        const currentNode = nodes[0];
+        // Map ReactFlow node type to your expected type
+        const nodeType = currentNode.type === 'triggerNode' ? 'trigger' : 
+                        currentNode.type === 'actionNode' ? 'action' : 
+                        null;
+        
+        if (nodeType) {
+            const mappedNode = {
+            id: currentNode.id,
+            type: nodeType,
+            data: currentNode.data
+            };
+            
+            setSelectedNode(mappedNode as selectedNode);
+            
+            if(nodeType === 'action'){
+            const actionId = currentNode.data?.actionId;
+            const nodeId = currentNode.id;
+            if(actionId && !actionMetaData[nodeId]){
+                const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/actions/${actionId}/metadata`, {params:{flowId}});
+                setActionMetaData((prev) => ({
+                ...prev,
+                [nodeId]: res.data,
+                }));
+                setHasChanges(true);
             }
-            else{
-                setSelectedNode(null);
             }
         }
+        } else {
+        setSelectedNode(null);
+        }
+    }
     })
     
     const saveFlowToDatabase = useCallback(async () => {
