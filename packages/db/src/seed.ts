@@ -1,31 +1,42 @@
 import {db} from "./index"
 
-async function seed() {
+const seed = async () => {
     try {
-        const avaialbleTrigger = await db.availableTriggers.createMany({
-            data:[
-                {
-                    name:"webhook",
-                    image:"https://res.cloudinary.com/dbzdzrghh/image/upload/v1744012895/webhooks-logo-png_seeklogo-274079_exnlrc.png"
-                }
-            ]
+        const googleDrive = await db.integration.create({
+            data: {
+                name: "Google Drive",
+                image:"https://res.cloudinary.com/dbzdzrghh/image/upload/v1744991856/Google_Drive_icon__282020_29_msask7.svg",
+
+            }
         })
-        const avaialbleAction = await db.availableActions.createMany({
-            data:[
-                {
-                    name:"Send Email",
-                    image:"https://res.cloudinary.com/dbzdzrghh/image/upload/v1744013154/360_F_238966486_A5wEWiRNtuUm85Qxj5BM12hCDNrSS7yS_xm7sll.jpg"
-                },
-                {
-                    name: "Send Solana",
-                    image:"https://res.cloudinary.com/dbzdzrghh/image/upload/v1744013249/solana-3d-icon-download-in-png-blend-fbx-gltf-file-formats--bitcoin-logo-crypto-coin-pack-logos-icons-8263859_eveybn.webp"
-                }
-            ],
-            skipDuplicates:true
-        }) 
+        const classRoom = await db.integration.create({
+            data:{
+                name: "Google Classroom",
+                image:"https://res.cloudinary.com/dbzdzrghh/image/upload/v1745140410/Google_Classroom_Logo_gjisgd.png"
+            }
+        })
+        await db.availableTriggers.create({
+            data:{
+                name: "New File Uploaded",
+                integrationId: googleDrive.id,
+                fields:[]
+            }
+        })
+        await db.availableActions.create({
+            data:{
+                name:"Send Notification",
+                integrationId: classRoom.id,
+                fields:[
+                    {name: 'courseId', type: 'string',label:"Course Id", required:true},
+                    { name: 'message', type: 'string', label: 'Message' },
+                ]
+            }
+        })
+        console.log("seeded");
     } catch (error) {
-        console.log(error)
+        console.log(error);
     }
+
 }
 
 seed();

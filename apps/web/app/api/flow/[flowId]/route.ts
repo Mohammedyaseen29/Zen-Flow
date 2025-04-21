@@ -115,7 +115,7 @@ export async function PUT(request: NextRequest,{params}:{params:{flowId:string}}
                     data:{
                         flowId,
                         actionId: actionId,
-                        metaData: action.metaData || action.metadata || {},
+                        metaData: action.metaData || {},
                     } 
                 })
             }

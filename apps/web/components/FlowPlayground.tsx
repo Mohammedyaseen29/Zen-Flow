@@ -29,17 +29,29 @@
     interface Trigger{
         id:string,
         name:string,
-        image:string
+        image:string,
+        triggers:{
+            id:string,
+            name:string,
+            integrationId:string,
+            fields:any[]
+        }[]
     }
     interface Action{
         id:string,
         name:string,
-        image:string
+        image:string,
+        actions:{
+            id:string,
+            name:string,
+            integrationId:string,
+            fields:any[]
+        }[]
     }
     interface selectedNode{
-            id: string;
-            type: "action" | "trigger";
-            data: any; 
+        id: string;
+        type: "action" | "trigger";
+        data: any; 
     }
 
     // Define node types for React Flow
@@ -80,6 +92,7 @@
             if(nodes.length == 1){
                 const currentNode = nodes[0];
                 setSelectedNode(currentNode);
+                
                 if(currentNode.type === 'action'){
                     const actionId = currentNode.data?.actionId;
                     const nodeId = currentNode.id;
@@ -102,13 +115,10 @@
     const saveFlowToDatabase = useCallback(async () => {
         try {
             setSaving(true);
-            
             // Use current values from refs instead of closures
             const currentNodes = nodesRef.current;
             const currentMetaData = actionMetaDataRef.current;
-
             const triggerNode = currentNodes.find(node => node.id === 'trigger-1');
-            
             // Check if trigger is selected before proceeding
             if (!triggerNode?.data?.triggerId) {
                 console.log("No trigger selected, skipping save");
@@ -243,15 +253,15 @@
                 console.error("Error loading positions from localStorage:", error);
             }
             
-            // Initialize nodes array and metadata
+            
             const newNodes: Node[] = [];
             const newEdges: Edge[] = [];
             const newActionMetadata: Record<string, Record<string, any>> = {};
             
-            // Handle trigger node
+            
             if(flowData.trigger && flowData.trigger.triggerId){
                 // Find the trigger in available triggers
-                const trigger = triggers.find(t => t.id === flowData.trigger.triggerId);
+                const trigger = triggers.flatMap((integration)=>integration.triggers).find(t=>t.id === flowData.trigger.triggerId);
                 if(trigger){
                     // Set selected trigger and create trigger node
                     setSelectedTrigger(trigger as any);
@@ -261,7 +271,6 @@
                         position: (nodePositions as Record<string, { x: number; y: number }>)['trigger-1'] || { x: 250, y: 50 },
                         data: {
                             label: trigger.name,
-                            icon: trigger.image,
                             selected: true,
                             triggerId: trigger.id,
                             options: triggers,
@@ -302,7 +311,7 @@
             // Process actions if they exist
             if (flowData.action && flowData.action.length > 0) {
                 flowData.action.forEach((action:any, index:number) => {
-                    const actionData = actions.find(a => a.id === action.actionId);
+                    const actionData = actions.flatMap((integration)=>integration.actions).find(a=>a.id === action.actionId);
                     if (actionData) {
                         const nodeId = `action-${index + 1}`;
                         
@@ -318,7 +327,6 @@
                             position: (nodePositions as Record<string,{x:number,y:number}>)[nodeId] || { x: 250, y: 150 + index * 150 },
                             data: { 
                                 label: actionData.name, 
-                                icon: actionData.image, 
                                 actionId: actionData.id,
                                 onDelete: () => deleteNode(nodeId),
                                 options: actions,
@@ -379,7 +387,7 @@
         if(!availableTriggers){
             return;
         }
-        const trigger = availableTriggers.find(t => t.id === triggerId);
+        const trigger = availableTriggers.flatMap((integration)=>integration.triggers).find((t)=>t.id === triggerId);
         if (trigger) {
             console.log("Trigger selected:", trigger.id, trigger.name);
             setSelectedTrigger(trigger as any);
@@ -392,7 +400,6 @@
                     ...node,
                     data: {
                         label: trigger.name,
-                        icon: trigger.image,
                         selected: true,
                         triggerId: trigger.id,
                         options: availableTriggers,
@@ -407,10 +414,9 @@
             // Mark that we have changes to save
             setHasChanges(true);
             
-            // Force immediate save instead of waiting for debounce
+            
             if (initialLoadCompleted) {
                 console.log("Triggering immediate save after trigger selection");
-                // Use setTimeout to ensure state is updated before saving
                 setTimeout(() => saveFlowToDatabase(), 0);
             }
         }
@@ -426,7 +432,7 @@
             return;
         }
 
-        const action = availableActions.find(a => a.id === actionId);
+        const action = availableActions.flatMap((integration)=>integration.actions).find((a)=>a.id === actionId);
         if (!action) return;
 
         const newNodeId = `action-${nextNodeId.current}`;
@@ -441,8 +447,7 @@
         type: 'actionNode',
         position: { x: 250, y: yOffset },
         data: { 
-            label: action.name, 
-            icon: action.image, 
+            label: action.name,
             actionId: action.id,
             onDelete: () => deleteNode(newNodeId),
             options: availableActions,
@@ -478,11 +483,9 @@
         return updatedEdges;
         });
         
-        // Mark that we have changes to save
         setHasChanges(true);
         
         if (initialLoadCompleted) {
-        // Force immediate save with the latest state using setTimeout
         setTimeout(() => saveFlowToDatabase(), 0);
         }
     }, [nodes, selectedTrigger, initialLoadCompleted, saveFlowToDatabase, availableActions]);
@@ -492,7 +495,7 @@
         if(!availableActions){
             return;
         }
-        const action = availableActions.find(a => a.id === actionId);
+        const action = availableActions.flatMap((integration)=>integration.actions).find((a)=>a.id === actionId);
         if (!action) return;
 
         setNodes((nds) => {
@@ -503,7 +506,6 @@
                 data: {
                 ...node.data,
                 label: action.name,
-                icon: action.image,
                 actionId: action.id,
                 },
             };
@@ -681,7 +683,6 @@
         setTimeout(() => saveFlowToDatabase(), 0);
         }
     }, [initialLoadCompleted, saveFlowToDatabase]);
-
     if(loading){
         return(
         <div className='flex justify-center items-center h-screen'>

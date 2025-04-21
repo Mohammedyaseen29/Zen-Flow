@@ -76,7 +76,6 @@ model Trigger{
   flow         Flow               @relation(fields: [flowId],references: [id])
   triggerId    String
   type         AvailableTriggers   @relation(fields: [triggerId],references: [id])
-
   @@index([flowId])
   @@index([triggerId])
 }
@@ -94,21 +93,31 @@ model Actions{
   @@index([actionId])
 }
 
-model AvailableTriggers{
-  id          String          @id        @default(uuid())
-  name        String
-  image       String?
-  fields      Json           @default("[]")
-  triggers    Trigger[]
-}
+  model Integration{
+    id          String          @id        @default(uuid())
+    name        String
+    image       String?
+    triggers    AvailableTriggers[]
+    actions     AvailableActions[] 
+  }
 
-model AvailableActions{
-  id        String          @id         @default(uuid())
-  name      String
-  image     String?
-  fields    Json           @default("[]")
-  actions   Actions[]
-}
+  model AvailableTriggers{
+    id            String          @id        @default(uuid())
+    name          String
+    integrationId String
+    integration   Integration     @relation(fields: [integrationId],references: [id])
+    fields        Json           @default("[]")
+    triggers      Trigger[]
+  }
+
+  model AvailableActions{
+    id        String          @id         @default(uuid())
+    name      String
+    integrationId String
+    integration   Integration     @relation(fields: [integrationId],references: [id])
+    fields    Json           @default("[]")
+    actions   Actions[]
+  }
 
 model FlowState{
   id                  String      @id      @default(uuid())

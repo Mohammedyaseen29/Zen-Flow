@@ -1,12 +1,23 @@
-    import { Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import ActionConfig from './ActionConfig';
-import { metadata } from '@/app/layout';
+import TriggerConfig from './TriggerConfig';
+
 
     type SidebarProps = {
-    availableTriggers: Array<{ id: string; name: string; image: string }>;
-    availableActions: Array<{ id: string; name: string; image: string }>;
+    availableTriggers: Array<{ id: string; name: string; image: string ;triggers:{
+            id:string,
+            name:string,
+            integrationId:string,
+            fields:any[]
+        }[]}>;
+    availableActions: Array<{ id: string; name: string; image: string ;actions:{
+            id:string,
+            name:string,
+            integrationId:string,
+            fields:any[]
+        }[]}>;
     onSelectTrigger: (id: string) => void;
     onAddAction: (id: string) => void;
     selectedNode: {id:string,type:'trigger' | 'action',data:any} | null;
@@ -56,19 +67,19 @@ import { metadata } from '@/app/layout';
                     <div className="mb-6">
                             <h3 className="font-medium text-sm text-gray-500 uppercase mb-2">Triggers</h3>
                             <div className="space-y-2">
-                            {availableTriggers.map((trigger) => (
+                            {availableTriggers.map((integration) => (
                                 <button
-                                key={trigger.id}
+                                key={integration.id}
                                 className={`w-full flex items-center p-2 rounded-md text-sm ${
-                                    selectedTrigger?.id === trigger.id
+                                    selectedTrigger?.id === integration.triggers[0]?.id
                                     ? 'bg-blue-100 text-blue-700'
                                     : 'hover:bg-gray-100'
                                 }`}
-                                onClick={() => onSelectTrigger(trigger.id)}
+                                onClick={() => onSelectTrigger(integration.triggers[0]?.id)}
                                 >
                                 <div className='flex items-center gap-x-1'>
-                                        <Image src={trigger.image} alt='trigger.png' width={20} height={20}/>
-                                        <p>{trigger.name}</p>
+                                        <Image src={integration.image} alt='trigger.png' width={20} height={20}/>
+                                        <p>{integration.name}</p>
                                 </div>
                                 </button>
                             ))}
@@ -78,18 +89,18 @@ import { metadata } from '@/app/layout';
                         <div>
                             <h3 className="font-medium text-sm text-gray-500 uppercase mb-2">Actions</h3>
                             <div className="space-y-2">
-                            {availableActions.map((action) => (
+                            {availableActions.map((integration) => (
                                 <button
-                                key={action.id}
+                                key={integration.id}
                                 className={`w-full flex items-center p-2 rounded-md text-sm hover:bg-gray-100 ${
                                     !selectedTrigger ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
-                                onClick={() => selectedTrigger && onAddAction(action.id)}
+                                onClick={() => selectedTrigger && onAddAction(integration.actions[0]?.id)}
                                 disabled={!selectedTrigger}
                                 >
                                 <div className='flex items-center gap-x-1'>
-                                        <Image src={action.image} alt='trigger.png' width={20} height={20}/>
-                                        <p className='text-sm font-semibold'>{action.name}</p>
+                                        <Image src={integration.image} alt='trigger.png' width={20} height={20}/>
+                                        <p className='text-sm font-semibold'>{integration.name}</p>
                                 </div>
                                 
                                 </button>
@@ -107,17 +118,19 @@ import { metadata } from '@/app/layout';
             {activeTab === "configure" && selectedNode &&(
                 <>
                     {selectedNode.type === "trigger" ?(
-                        <div className="p-4 bg-white rounded-lg shadow">
-                            <h3 className="font-semibold text-lg mb-4">Configure Trigger</h3>
-                            <p className="text-gray-600">Trigger configuration coming soon...</p>
-                            {/* Trigger configuration would go here */}
-                        </div>
+                        // <TriggerConfig
+                        //     triggerId={selectedNode.data.triggerId}
+                        //     onSaveConfig={(triggerId, metadata) => onUpdateActionMetadata(selectedNode.id, triggerId, metadata)}
+                        //     existingMetadata={actionMetaData[selectedNode.id]}
+                        // />
+                        <div>trigger clicked</div>
                     ):selectedNode.type === "action" ? (
-                        <ActionConfig
-                        actionId={selectedNode.data.actionId}
-                        onSaveConfig={(actionId,metadata)=>onUpdateActionMetadata(selectedNode.id,actionId,metadata)}
-                        existingMetadata={actionMetaData[selectedNode.id]}
-                        />
+                        // <ActionConfig
+                        // actionId={selectedNode.data.actionId}
+                        // onSaveConfig={(actionId,metadata)=>onUpdateActionMetadata(selectedNode.id,actionId,metadata)}
+                        // existingMetadata={actionMetaData[selectedNode.id]}
+                        // />
+                        <div>action node clicked</div>
                     ):(
                         <div className="p-4 bg-white rounded-lg shadow">
                             <p className="text-gray-600">Select a node to configure.</p>
