@@ -33,11 +33,10 @@ export default function TriggerConfig({triggerId, onSaveConfig, existingMetadata
             // This endpoint would need to be implemented to return trigger fields
             const fetchedFields = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/triggers/${triggerId}/fields`)
             // Ensure fields is always an array
-            setFields(Array.isArray(fetchedFields.data) ? fetchedFields.data : []);
-            console.log('Fetched fields:', fetchedFields.data);
+            setFields(Array.isArray(fetchedFields.data.fields) ? fetchedFields.data.fields : []);
+            console.log('Fetched fields:', fetchedFields.data.fields);
         } catch (error) {
             console.log(error);
-            // Initialize with empty array on error
             setFields([]);
         } finally {
             setLoading(false);
