@@ -1,7 +1,10 @@
 {
-  "name": "integrations",
+  "name": "@repo/integrations",
   "version": "1.0.0",
   "main": "index.js",
+  "exports": {
+    "./apps": "./src/index.ts"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,6 +13,10 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "dotenv": "^16.5.0",
     "googleapis": "^148.0.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*"
   }
 }

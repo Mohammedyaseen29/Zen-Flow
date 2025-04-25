@@ -1,4 +1,4 @@
-    "use client";
+"use client";
         
     import { useState, useCallback, useRef, useEffect } from 'react';
     import {
@@ -68,6 +68,7 @@
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedTrigger, setSelectedTrigger] = useState();
     const [actionMetaData,setActionMetaData] = useState<Record<string,Record<string,any>>>({});
+    const [triggerMetaData,setTriggerMetaData] = useState<Record<string,Record<string,any>>>({});
     const [flowName,setFlowName] = useState<string>("Untittled Flow");
     const [selectedNode,setSelectedNode] = useState<selectedNode|null>(null);
     const [saving,setSaving] = useState(false); 
@@ -79,13 +80,15 @@
     const nodesRef = useRef<Node[]>([]);
     const edgesRef = useRef<Edge[]>([]);
     const actionMetaDataRef = useRef<Record<string,Record<string,any>>>({});
+    const triggerMetaDataRef = useRef<Record<string,Record<string,any>>>({});
     
     // Update refs when state changes
     useEffect(() => {
         nodesRef.current = nodes;
         edgesRef.current = edges;
         actionMetaDataRef.current = actionMetaData;
-    }, [nodes, edges, actionMetaData]);
+        triggerMetaDataRef.current = triggerMetaData;
+    }, [nodes, edges, actionMetaData, triggerMetaData]);
 
     useOnSelectionChange({
     onChange: async ({nodes}) => {
@@ -130,6 +133,7 @@
             // Use current values from refs instead of closures
             const currentNodes = nodesRef.current;
             const currentMetaData = actionMetaDataRef.current;
+            const currentTriggerMetaData = triggerMetaDataRef.current;
             const triggerNode = currentNodes.find(node => node.id === 'trigger-1');
             // Check if trigger is selected before proceeding
             if (!triggerNode?.data?.triggerId) {
@@ -140,7 +144,7 @@
             
             const triggerData = {
                 triggerId: triggerNode.data.triggerId,
-                metadata: {},
+                metadata: currentTriggerMetaData['trigger-1'] || {},
             }
             
             // Include all action nodes (both by type and ID pattern)
@@ -269,9 +273,14 @@
             const newNodes: Node[] = [];
             const newEdges: Edge[] = [];
             const newActionMetadata: Record<string, Record<string, any>> = {};
+            const newTriggerMetadata: Record<string, Record<string, any>> = {};
             
             
             if(flowData.trigger && flowData.trigger.triggerId){
+                // Store trigger metadata if it exists
+                if(flowData.trigger.metadata) {
+                    newTriggerMetadata['trigger-1'] = flowData.trigger.metadata;
+                }
                 // Find the trigger in available triggers
                 const trigger = triggers.flatMap((integration)=>integration.triggers).find(t=>t.id === flowData.trigger.triggerId);
                 if(trigger){
@@ -370,6 +379,7 @@
             setNodes(newNodes);
             setEdges(newEdges);
             setActionMetaData(newActionMetadata);
+            setTriggerMetaData(newTriggerMetadata);
             
             // Mark loading as complete
             setInitialLoadCompleted(true);
@@ -676,15 +686,34 @@
         [initialLoadCompleted]
     );
 
-    const onUpdateActionMetadata = useCallback((nodeId:string, actionId:string, metaData:Record<string,any>) => {
+    const onUpdateActionMetadata = useCallback((nodeId: string, actionId: string, metadata: Record<string, any>) => {
         setActionMetaData(prev => {
-        const updated = {
-            ...prev,
-            [nodeId]: metaData,
-        };
-        // Update ref immediately
-        actionMetaDataRef.current = updated;
-        return updated;
+            const updated = {
+                ...prev,
+                [nodeId]: metadata,
+            };
+            // Update ref immediately
+            actionMetaDataRef.current = updated;
+            return updated;
+        });
+        
+        setHasChanges(true);
+        
+        // Force immediate save instead of waiting for debounce when metadata changes
+        if (initialLoadCompleted) {
+            setTimeout(() => saveFlowToDatabase(), 0);
+        }
+    }, [initialLoadCompleted, saveFlowToDatabase]);
+
+    const onUpdateTriggerMetadata = useCallback((nodeId: string, triggerId: string, metadata: Record<string, any>) => {
+        setTriggerMetaData(prev => {
+            const updated = {
+                ...prev,
+                [nodeId]: metadata,
+            };
+            // Update ref immediately
+            triggerMetaDataRef.current = updated;
+            return updated;
         });
         
         // Mark that we have changes to save
@@ -692,9 +721,10 @@
         
         // Force immediate save instead of waiting for debounce when metadata changes
         if (initialLoadCompleted) {
-        setTimeout(() => saveFlowToDatabase(), 0);
+            setTimeout(() => saveFlowToDatabase(), 0);
         }
     }, [initialLoadCompleted, saveFlowToDatabase]);
+    
     if(loading){
         return(
         <div className='flex justify-center items-center h-screen'>
@@ -731,8 +761,10 @@
             onAddAction={addActionNode}
             selectedNode={selectedNode || null}
             onUpdateActionMetadata={onUpdateActionMetadata}
+            onUpdateTriggerMetadata={onUpdateTriggerMetadata}
             selectedTrigger={selectedTrigger || null}
             actionMetaData={actionMetaData}
+            triggerMetaData={triggerMetaData}
         />
         </div>
     );

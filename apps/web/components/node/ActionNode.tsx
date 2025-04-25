@@ -30,7 +30,7 @@ import Image from 'next/image';
             </div>
             </div>
             <div className="flex items-center">
-            <button 
+            <button
                 onClick={data.onDelete}
                 className="text-gray-500 hover:text-red-500"
             >
