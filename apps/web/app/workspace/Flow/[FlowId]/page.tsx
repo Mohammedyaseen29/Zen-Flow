@@ -9,7 +9,7 @@ export default function page({params}:{params:{FlowId:string}}) {
 
     return (
         <div>
-            <AppBar/>
+            <AppBar flowId={flowId}/>
             <WorkflowBuilder flowId={flowId}/>
         </div>
     )

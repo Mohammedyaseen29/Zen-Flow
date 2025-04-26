@@ -158,6 +158,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
