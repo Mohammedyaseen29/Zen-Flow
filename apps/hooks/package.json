@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/index.js",
+    "build": "tsc -b",
+    "dev": "npm run build && npm run start"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,7 @@
   "dependencies": {
     "@types/express": "^5.0.0",
     "express": "^4.21.2",
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "@repo/integrations": "workspace:*"
   }
 }

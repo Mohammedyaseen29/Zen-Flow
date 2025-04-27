@@ -8,7 +8,7 @@ const BATCH_SIZE = 10;
 
 const kafka = new Kafka({
     clientId: 'outbox-processor',
-    brokers: ['localhost:9092'], // Update with your Kafka broker address
+    brokers: ['localhost:9092'],
 });
 
 async function processOutboxBatch() {
@@ -33,30 +33,44 @@ async function processOutboxBatch() {
             const producer = kafka.producer();
             await producer.connect();
             
-            await producer.send({
-                topic: TOPIC_NAME,
-                messages: pendingTasks.map((task) => ({
+            // Create messages for Kafka
+            const messages = pendingTasks.map((task) => {
+                // Log the flow state to debug
+                console.log(`Sending flow state ID: ${task.flowState.id}`);
+                
+                return {
                     key: task.flowState.flowId, // Using flowId as the key for partitioning
-                    value: JSON.stringify(task.flowStateId),
+                    // Fix: Send the actual flowState.id instead of flowStateId property
+                    value: JSON.stringify(task.flowState.id),
                     headers: {
                         'source': Buffer.from('outbox-sweeper'),
                         'timestamp': Buffer.from(Date.now().toString())
                     }
-                }))
+                };
             });
             
-            await producer.disconnect();
-
-            // Delete processed entries from outbox
-            await txn.flowStateOutBox.deleteMany({
-                where: {
-                    id: {
-                        in: pendingTasks.map((task) => task.id)
+            // Only proceed if we have valid messages
+            if (messages.length > 0) {
+                await producer.send({
+                    topic: TOPIC_NAME,
+                    messages
+                });
+                
+                // Delete processed entries from outbox ONLY AFTER successful Kafka send
+                await txn.flowStateOutBox.deleteMany({
+                    where: {
+                        id: {
+                            in: pendingTasks.map((task) => task.id)
+                        }
                     }
-                }
-            });
+                });
 
-            console.log(`Successfully processed and removed ${pendingTasks.length} outbox entries`);
+                console.log(`Successfully processed and removed ${pendingTasks.length} outbox entries`);
+            } else {
+                console.warn("No valid messages to send to Kafka");
+            }
+            
+            await producer.disconnect();
         });
     } catch (error) {
         console.error('Error processing outbox batch:', error);

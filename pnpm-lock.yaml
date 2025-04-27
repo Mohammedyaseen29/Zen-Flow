@@ -23,6 +23,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.0

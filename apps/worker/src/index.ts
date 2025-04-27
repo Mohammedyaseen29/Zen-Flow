@@ -1,206 +1,303 @@
-    // apps/worker/src/index.ts
-    import { db } from "@repo/db/client";
-    import { Kafka } from "kafkajs";
-    import { getIntegrationById, getIntegrationByName } from "@repo/integrations/apps";
+// apps/worker/src/index.ts
+import { db } from "@repo/db/client";
+import { Kafka } from "kafkajs";
+import { getIntegrationByName } from "@repo/integrations/apps";
 
-    const TOPIC_NAME = "flow-events";
+const TOPIC_NAME = "flow-events";
 
-    const kafka = new Kafka({
+const kafka = new Kafka({
     clientId: 'flow-worker',
     brokers: ['localhost:9092'],
-    });
+});
 
-    async function executeFlow(flowStateId: string) {
+async function executeFlow(flowStateId: string) {
     try {
+        console.log(`Starting execution of flow state: "${flowStateId}"`);
+        
+        // Parse the flowStateId if it's received as a JSON string
+        let parsedId = flowStateId;
+        try {
+            // If the ID is wrapped in quotes in the JSON string
+            parsedId = JSON.parse(flowStateId);
+        } catch (err) {
+            // If it's already a string, use it as is
+            console.log("Using flowStateId as-is, not JSON-encoded");
+        }
+        
         // Get the flow state with related flow details
         const flowState = await db.flowState.findUnique({
-        where: { id: flowStateId },
-        include: {
-            flow: {
+            where: { id: parsedId },
             include: {
-                trigger: {
-                include: {
-                    type: true
+                flow: {
+                    include: {
+                        trigger: {
+                            include: {
+                                type: true
+                            }
+                        },
+                        action: {
+                            include: {
+                                type: true
+                            }
+                        },
+                        user: true
+                    }
                 }
-                },
-                action: {
-                include: {
-                    type: true
-                }
-                },
-                user: true // Include user to get auth tokens
             }
-            }
-        }
         });
 
         if (!flowState) {
-        console.error(`Flow state ${flowStateId} not found`);
-        return;
+            console.error(`Flow state "${parsedId}" not found`);
+            
+            // Create a new entry in the outbox for retry
+            await createRetryEntry(parsedId);
+            return;
         }
 
         // Mark the flow as processing
         await db.flowState.update({
-        where: { id: flowStateId },
-        data: { status: 'processing' }
+            where: { id: parsedId },
+            data: { status: 'processing' }
         });
 
         // Execute the flow based on the trigger type
         const { flow } = flowState;
+        console.log(`Processing flow ${flow.id} with trigger ${flow.trigger?.type?.name}`);
         
-        // Handle Google Drive "new-file-uploaded" trigger
-        if (flow.trigger?.type?.name === 'new-file-uploaded') {
-        // Get user's Google credentials
-        const userAccount = await db.account.findFirst({
-            where: {
-            userId: flow.userId,
-            provider: 'google'
+        // Fix the trigger name inconsistency - standardize the case
+        const triggerName = flow.trigger?.type?.name?.toLowerCase();
+        
+        // Handle Google Drive trigger (adjust the name to match what's in your code)
+        if (triggerName === 'new file uploaded' || triggerName === 'new-file-uploaded') {
+            // Get user's Google credentials
+            const userAccount = await db.account.findFirst({
+                where: {
+                    userId: flow.userId,
+                    provider: 'google-drive' // Match the exact provider name
+                }
+            });
+            
+            if (!userAccount) {
+                console.error("User not connected to Google account");
+                throw new Error("User not connected to Google account");
             }
-        });
-        
-        if (!userAccount) {
-            throw new Error("User not connected to Google account");
-        }
-        
-        const accessToken = userAccount.access_token;
-        
-        // Get the Drive integration
-        const driveIntegration = getIntegrationByName('google-drive');
-        
-        // Get file details from the trigger metadata
-        //@ts-ignore
-        const fileDetails = flowState.metaData.fileDetails || {
-            fileId: 'sample-file-id', // In a real scenario, this would come from the webhook
-            fileName: 'Sample Document',
-            mimeType: 'application/pdf'
-        };
-        
-        // Process each action
-        for (const action of flow.action) {
-            // Extract action metadata
-            const actionMetadata = typeof action.metaData === 'string' 
-            ? JSON.parse(action.metaData) 
-            : action.metaData;
             
-            // For sending a notification to Google Classroom
-            if (action.type.name === 'send-notification') {
-            // Get the Classroom integration
-            const classroomIntegration = getIntegrationByName('google-classroom');
+            const accessToken = userAccount.access_token;
             
-            try {
-                // First, upload the file to the classroom course materials
-                
-                // 1. Get the file from Google Drive
-                const drive = driveIntegration.getDriveClient(accessToken);
-                const file = await drive.files.get({
-                fileId: fileDetails.fileId,
+            // Get the Drive integration
+            const driveIntegration = getIntegrationByName('google-drive');
+            
+            // Get file details from the trigger metadata
+            //@ts-ignore
+            const fileDetails = flowState.metaData?.fileDetails || {};
+            const fileId = fileDetails.fileId;
+            
+            if (!fileId) {
+                throw new Error("No file ID found in flow state metadata");
+            }
+            
+            console.log(`Processing file ID: ${fileId}`);
+            
+            // Get detailed file information
+            const drive = driveIntegration.getDriveClient(accessToken);
+            const fileInfo = await drive.files.get({
+                fileId: fileId,
                 fields: 'id,name,mimeType,webContentLink',
                 supportsAllDrives: true
-                });
+            });
+            
+            const fileName = fileInfo.data.name;
+            const mimeType = fileInfo.data.mimeType;
+            
+            console.log(`File details - Name: ${fileName}, Type: ${mimeType}`);
+            
+            // Process each action
+            for (const action of flow.action) {
+                // Extract action metadata
+                const actionMetadata = typeof action.metaData === 'string' 
+                    ? JSON.parse(action.metaData) 
+                    : action.metaData;
                 
-                // 2. Get file content
-                const fileContent = await drive.files.get({
-                fileId: fileDetails.fileId,
-                alt: 'media'
-                }, { responseType: 'stream' });
-                
-                // 3. Create a course material in Google Classroom
-                const classroom = classroomIntegration.getClassroomClient(accessToken);
-                
-                // Create a course material with the file attached
-                const courseWorkMaterial = await classroom.courses.courseWorkMaterials.create({
-                courseId: actionMetadata.courseId,
-                requestBody: {
-                    title: `New File: ${file.data.name}`,
-                    description: `Automatically uploaded from Google Drive`,
-                    materials: [
-                    {
-                        driveFile: {
-                        driveFile: {
-                            id: fileDetails.fileId,
-                            title: file.data.name
+                // For sending a notification to Google Classroom
+                if (action.type.name.toLowerCase() === 'send-notification') {
+                    console.log(`Executing send-notification action to Google Classroom`);
+                    
+                    // Get the Classroom integration
+                    const classroomIntegration = getIntegrationByName('google-classroom');
+                    
+                    // Get user's Classroom credentials
+                    const classroomAccount = await db.account.findFirst({
+                        where: {
+                            userId: flow.userId,
+                            provider: 'google-classroom'
                         }
-                        }
+                    });
+                    
+                    if (!classroomAccount) {
+                        throw new Error("User not connected to Google Classroom account");
                     }
-                    ],
-                    state: 'PUBLISHED'
+                    
+                    const classroomAccessToken = classroomAccount.access_token;
+                    
+                    try {
+                        // 1. Create a course material in Google Classroom
+                        const classroom = classroomIntegration.getClassroomClient(classroomAccessToken);
+                        
+                        // Create a course material with the file attached
+                        const courseWorkMaterial = await classroom.courses.courseWorkMaterials.create({
+                            courseId: actionMetadata.courseId,
+                            requestBody: {
+                                title: `New File: ${fileName}`,
+                                description: `Automatically uploaded from Google Drive`,
+                                materials: [
+                                    {
+                                        driveFile: {
+                                            driveFile: {
+                                                id: fileId,
+                                                title: fileName
+                                            }
+                                        }
+                                    }
+                                ],
+                                state: 'PUBLISHED'
+                            }
+                        });
+                        
+                        console.log(`Created course material in Classroom, ID: ${courseWorkMaterial.data.id}`);
+                        
+                        // 2. Send a notification announcement to the class
+                        const notificationMessage = actionMetadata.message || 
+                            `New file uploaded: ${fileName} - Check course materials for the attached file.`;
+                            
+                        await classroomIntegration.actions['send-notification'](
+                            {
+                                courseId: actionMetadata.courseId,
+                                message: notificationMessage,
+                            },
+                            { accessToken: classroomAccessToken }
+                        );
+                        
+                        console.log(`Sent notification to course ${actionMetadata.courseId}`);
+                    } catch (actionError) {
+                        console.error(`Action execution failed: ${actionError}`);
+                        await db.flowState.update({
+                            where: { id: parsedId },
+                            data: { 
+                                status: 'failed',
+                                metaData: {
+                                    //@ts-ignore
+                                    ...flowState.metaData,
+                                    error: `Action execution failed: ${actionError instanceof Error ? actionError.message : "Unknown error"}`
+                                }
+                            }
+                        });
+                        return;
+                    }
                 }
-                });
-                
-                // 4. Send a notification announcement to the class
-                await classroomIntegration.actions['send-notification'](
-                {
-                    courseId: actionMetadata.courseId,
-                    message: `New file uploaded: ${fileDetails.fileName} - Check course materials for the attached file.`,
-                },
-                { accessToken }
-                );
-                
-                console.log(`Successfully processed flow ${flow.id} for file ${fileDetails.fileId}`);
-                console.log(`File uploaded to Google Classroom course ${actionMetadata.courseId}`);
-            } catch (actionError) {
-                console.error(`Action execution failed: ${actionError}`);
-                await db.flowState.update({
+            }
+            
+            // Mark the flow as completed
+            await db.flowState.update({
+                where: { id: parsedId },
+                data: { 
+                    status: 'completed',
+                    completedAt: new Date()
+                }
+            });
+            
+            console.log(`Flow ${flow.id} completed successfully`);
+        }
+    } catch (error) {
+        console.error(`Flow execution error: ${error instanceof Error ? error.message : "Unknown error"}`);
+        
+        try {
+            // Attempt to update the flow state if possible
+            await db.flowState.update({
                 where: { id: flowStateId },
                 data: { 
                     status: 'failed',
                     metaData: {
                         //@ts-ignore
-                    ...flowState.metaData,
-                    error: `Action execution failed: ${actionError}`
+                        ...(await db.flowState.findUnique({ where: { id: flowStateId } }))?.metaData,
+                        error: `Flow execution failed: ${error instanceof Error ? error.message : "Unknown error"}`
                     }
                 }
-                });
-                return;
-            }
-            }
+            });
+        } catch (updateError) {
+            console.error(`Failed to update flow state: ${updateError}`);
+            // Create a retry entry if we couldn't update
+            await createRetryEntry(flowStateId);
+        }
+    }
+}
+
+// Function to create a retry entry in the outbox
+async function createRetryEntry(flowStateId: string) {
+    try {
+        console.log(`Creating retry entry for flow state: ${flowStateId}`);
+        
+        // First check if this flow state exists
+        const flowState = await db.flowState.findUnique({
+            where: { id: flowStateId }
+        });
+        
+        if (!flowState) {
+            console.error(`Cannot create retry entry: Flow state ${flowStateId} not found`);
+            return;
         }
         
-        // Mark the flow as completed
-        await db.flowState.update({
-            where: { id: flowStateId },
-            data: { 
-            status: 'completed',
-            completedAt: new Date()
+        // Create a new outbox entry for retry
+        await db.flowStateOutBox.create({
+            data: {
+                flowState: {
+                    connect: {
+                        id: flowStateId
+                    }
+                },
             }
         });
-        }
+        
+        console.log(`Retry entry created for flow state: ${flowStateId}`);
     } catch (error) {
-        console.error(`Flow execution error: ${error}`);
-        await db.flowState.update({
-        where: { id: flowStateId },
-        data: { 
-            status: 'failed',
-            metaData: {
-                //@ts-ignore
-            ...(await db.flowState.findUnique({ where: { id: flowStateId } }))?.metaData,
-            error: `Flow execution failed: ${error}`
-            }
-        }
-        });
+        console.error(`Failed to create retry entry: ${error}`);
     }
-    }
+}
 
-    async function main() {
+async function main() {
     const consumer = kafka.consumer({ groupId: 'flow-worker-group' });
     await consumer.connect();
     await consumer.subscribe({ topic: TOPIC_NAME, fromBeginning: true });
     
+    console.log('Consumer connected and subscribed to topic:', TOPIC_NAME);
+    
     await consumer.run({
         eachMessage: async ({ topic, partition, message }) => {
-        const flowStateId = message.value?.toString();
-        
-        if (flowStateId) {
-            console.log(`Processing flow state: ${flowStateId}`);
-            await executeFlow(flowStateId);
-        }
+            if (message.value) {
+                const flowStateId = message.value.toString();
+                console.log(`Received message for flow state: "${flowStateId}"`);
+                await executeFlow(flowStateId);
+            } else {
+                console.error("Received message with null or undefined value");
+            }
         },
     });
     
     console.log('Worker started and listening for flow events');
-    }
+}
 
-    main().catch(error => {
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('Shutting down worker service...');
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('Shutting down worker service...');
+    process.exit(0);
+});
+
+// Start the worker
+main().catch(error => {
     console.error('Worker failed to start:', error);
     process.exit(1);
-    });
+});
