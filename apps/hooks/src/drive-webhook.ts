@@ -129,11 +129,15 @@ driveRouter.post("/drive/webhook", async (req, res) => {
                 parents: fileResponse.data.parents
             };
             
-            // Skip folders - only process files
-            if (fileDetails.mimeType === 'application/vnd.google-apps.folder') {
-                console.log(`Skipping folder: ${fileDetails.fileName} (${fileDetails.fileId})`);
-                return res.status(200).json({ message: "Event is for a folder, not a file. Skipping." });
+            // Check if it's a folder
+            const isFolder = fileDetails.mimeType === 'application/vnd.google-apps.folder';
+            
+            // Log info but don't stop processing for folders
+            if (isFolder) {
+                console.log(`Item is a folder: ${fileDetails.fileName} (${fileDetails.fileId})`);
             }
+            
+            console.log(`Retrieved file details for ${fileDetails.fileName} (${fileDetails.fileId})`);
             
             // Verify this file belongs to the monitored folder
             const triggerMetadata = typeof flow?.trigger?.metadata === 'string'
@@ -149,7 +153,6 @@ driveRouter.post("/drive/webhook", async (req, res) => {
                 return res.status(200).json({ message: "File not in monitored folder" });
             }
             
-            console.log(`Retrieved file details: ${fileDetails.fileName} (${fileDetails.fileId})`);
         } catch (fileError) {
             console.error(`Error fetching file details: ${fileError}`);
             // Continue with basic file info if detailed fetch fails
@@ -160,7 +163,8 @@ driveRouter.post("/drive/webhook", async (req, res) => {
             };
         }
         
-        // Create flow state and outbox entry
+        // Create flow state and outbox entry - even for folders
+        // Let the worker service decide how to handle folders
         await db.$transaction(async (txn) => {
             const state = await txn.flowState.create({
                 data: {
