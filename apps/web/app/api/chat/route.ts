@@ -1,8 +1,12 @@
     import { streamText } from "ai"
     import { google } from "@ai-sdk/google"
+    import { createGoogleGenerativeAI } from "@ai-sdk/google"
 
     // Allow streaming responses up to 30 seconds
     export const maxDuration = 30
+    const googleAI = createGoogleGenerativeAI({
+        apiKey: process.env.GOOGLE_API_KEY,
+    })
 
     export async function POST(req: Request) {
     const { messages } = await req.json()
@@ -17,14 +21,14 @@
 
     try {
         // Use the AI SDK's streamText function with the Google provider
-        const result = await streamText({
-        model: google("gemini-pro"),
+        const response = streamText({
+        model: googleAI("gemini-1.5-flash"),
         messages,
         system: systemPrompt,
         })
 
         // Return the streaming response
-        return result.toDataStreamResponse()
+        return response.toDataStreamResponse();
     } catch (error) {
         console.error("Error generating response:", error)
         return new Response(JSON.stringify({ error: "Failed to generate response" }), {

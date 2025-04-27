@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@repo/db/client";
 
+
+
+
 export async function POST(req:NextRequest){
     try {
         const session = await getServerSession(nextAuth);

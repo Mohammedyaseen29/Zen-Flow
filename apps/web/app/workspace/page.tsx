@@ -3,24 +3,21 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import Image from "next/image";
 import Design from "@/public/Design inspiration-bro.svg"
 import FlowCreateButton from "@/components/ui/FlowCreateButton";
+import axios from "axios";
+import { getServerSession } from "next-auth";
+import { nextAuth } from "@/lib/auth";
+import { db } from "@repo/db/client";
 
 
 
-export default function page() {
-    const flowBox = [
-        {
-            id:"1",
-            name:"Content creation"
-        },
-        {
-            id:"2",
-            name:"Code submission"
-        },
-        {
-            id:"3",
-            name:"Mark uploads"
+export default async function page() {
+    const session = await getServerSession(nextAuth);
+    const userId = session?.user?.id;
+    const flowBox = await db.flow.findMany({
+        where:{
+            userId:userId
         }
-    ]
+    })
     return (
         <div>
             <SidebarTrigger/>
@@ -38,7 +35,7 @@ export default function page() {
             </div>
                 <div className="grid mt-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-7xl mx-auto">
                         {flowBox && flowBox.length > 0 ? (
-                            flowBox.map((flow)=>(
+                            flowBox.map((flow:any)=>(
                             <FlowBox key={flow.id} id={flow.id}  name={flow.name}/>
                         ))
                         ) :(

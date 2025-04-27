@@ -1,6 +1,7 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
 import React from 'react'
 import VerticalRounded from './VerticalRounded';
+import Link from 'next/link';
 
 interface FlowBoxInterface{
     id:string;
@@ -14,7 +15,8 @@ export default function FlowBox({id,name}:FlowBoxInterface) {
         return colors[randomIndex];
     }
     return (
-        <div className='bg-white relative p-6 rounded-3xl shadow-md hover:scale-95 transition border cursor-pointer'>
+        <Link href={`/workspace/Flow/${id}`}>
+            <div className='bg-white relative p-6 rounded-3xl shadow-md hover:scale-95 transition border cursor-pointer'>
             <VerticalRounded/>
             <div className='flex items-center space-x-2.5'>
                 <div className={`${getRandomColor()} rounded-full p-2 w-14 h-14 flex items-center justify-center`}>
@@ -24,6 +26,7 @@ export default function FlowBox({id,name}:FlowBoxInterface) {
                     <p className='font-semibold text-2xl'>{name}</p>
                 </div>
             </div>
-        </div>
+            </div>
+        </Link>
     )
 }

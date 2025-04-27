@@ -14,6 +14,7 @@ export const googleDriveIntegration : any =  {
         getAuthUrl: (state:string) => {
         return oauth2Client.generateAuthUrl({
             access_type: 'offline',
+            prompt: 'consent',
             scope: ['https://www.googleapis.com/auth/drive'],
             state
         });
