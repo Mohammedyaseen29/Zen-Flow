@@ -65,10 +65,10 @@ async function executeFlow(flowStateId: string) {
         console.log(`Processing flow ${flow.id} with trigger ${flow.trigger?.type?.name}`);
         
         // Fix the trigger name inconsistency - standardize the case
-        const triggerName = flow.trigger?.type?.name?.toLowerCase();
+        const triggerName = flow.trigger?.type?.name;
         
         // Handle Google Drive trigger (adjust the name to match what's in your code)
-        if (triggerName === 'new file uploaded' || triggerName === 'new-file-uploaded') {
+        if (triggerName === "New File Uploaded") {
             // Get user's Google credentials
             const userAccount = await db.account.findFirst({
                 where: {
@@ -136,7 +136,7 @@ async function executeFlow(flowStateId: string) {
                     : action.metaData;
                 
                 // For sending a notification to Google Classroom
-                if (action.type.name.toLowerCase() === 'send-notification') {
+                if (action.type.name === 'Send Notification') {
                     console.log(`Executing send-notification action to Google Classroom`);
                     
                     // Get the Classroom integration
@@ -158,7 +158,7 @@ async function executeFlow(flowStateId: string) {
                     
                     try {
                         // 1. Create a course material in Google Classroom
-                        const classroom = classroomIntegration.getClassroomClient(classroomAccessToken);
+                        const classroom = classroomIntegration.helpers.getClassroomClient(classroomAccessToken);
                         
                         console.log(`Creating course material for file ${fileId} in course ${actionMetadata.courseId}`);
                         
