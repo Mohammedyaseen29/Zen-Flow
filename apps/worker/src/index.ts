@@ -102,7 +102,7 @@ async function executeFlow(flowStateId: string) {
             const drive = driveIntegration.getDriveClient(accessToken);
             const fileInfo = await drive.files.get({
                 fileId: fileId,
-                fields: 'id,name,mimeType,webContentLink',
+                fields: 'id,name,mimeType,webContentLink,webViewLink',
                 supportsAllDrives: true
             });
             
@@ -110,6 +110,23 @@ async function executeFlow(flowStateId: string) {
             const mimeType = fileInfo.data.mimeType;
             
             console.log(`File details - Name: ${fileName}, Type: ${mimeType}`);
+            
+            // Skip folders - only process actual files
+            if (mimeType === 'application/vnd.google-apps.folder') {
+                console.log(`Skipping folder - cannot process: ${fileName}`);
+                await db.flowState.update({
+                    where: { id: parsedId },
+                    data: { 
+                        status: 'skipped',
+                        metaData: {
+                            //@ts-ignore
+                            ...flowState.metaData,
+                            skippedReason: "Cannot process folders, only files"
+                        }
+                    }
+                });
+                return;
+            }
             
             // Process each action
             for (const action of flow.action) {
@@ -143,6 +160,8 @@ async function executeFlow(flowStateId: string) {
                         // 1. Create a course material in Google Classroom
                         const classroom = classroomIntegration.getClassroomClient(classroomAccessToken);
                         
+                        console.log(`Creating course material for file ${fileId} in course ${actionMetadata.courseId}`);
+                        
                         // Create a course material with the file attached
                         const courseWorkMaterial = await classroom.courses.courseWorkMaterials.create({
                             courseId: actionMetadata.courseId,
@@ -169,15 +188,17 @@ async function executeFlow(flowStateId: string) {
                         const notificationMessage = actionMetadata.message || 
                             `New file uploaded: ${fileName} - Check course materials for the attached file.`;
                             
-                        await classroomIntegration.actions['send-notification'](
-                            {
-                                courseId: actionMetadata.courseId,
-                                message: notificationMessage,
-                            },
-                            { accessToken: classroomAccessToken }
-                        );
+                        console.log(`Sending notification to course ${actionMetadata.courseId}: ${notificationMessage}`);
                         
-                        console.log(`Sent notification to course ${actionMetadata.courseId}`);
+                        const announcementResult = await classroom.courses.announcements.create({
+                            courseId: actionMetadata.courseId,
+                            requestBody: { 
+                                text: notificationMessage,
+                                state: 'PUBLISHED'
+                            },
+                        });
+                        
+                        console.log(`Sent notification to course ${actionMetadata.courseId}, announcement ID: ${announcementResult.data.id}`);
                     } catch (actionError) {
                         console.error(`Action execution failed: ${actionError}`);
                         await db.flowState.update({

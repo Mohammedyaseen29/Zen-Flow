@@ -129,6 +129,26 @@ driveRouter.post("/drive/webhook", async (req, res) => {
                 parents: fileResponse.data.parents
             };
             
+            // Skip folders - only process files
+            if (fileDetails.mimeType === 'application/vnd.google-apps.folder') {
+                console.log(`Skipping folder: ${fileDetails.fileName} (${fileDetails.fileId})`);
+                return res.status(200).json({ message: "Event is for a folder, not a file. Skipping." });
+            }
+            
+            // Verify this file belongs to the monitored folder
+            const triggerMetadata = typeof flow?.trigger?.metadata === 'string'
+                ? JSON.parse(flow?.trigger?.metadata) 
+                : flow?.trigger?.metadata;
+                
+            const monitoredFolderId = triggerMetadata.folderId;
+            
+            // Skip if this file isn't in the monitored folder
+            if (monitoredFolderId && fileDetails.parents && 
+                !fileDetails.parents.includes(monitoredFolderId)) {
+                console.log(`File ${fileDetails.fileId} is not in the monitored folder ${monitoredFolderId}`);
+                return res.status(200).json({ message: "File not in monitored folder" });
+            }
+            
             console.log(`Retrieved file details: ${fileDetails.fileName} (${fileDetails.fileId})`);
         } catch (fileError) {
             console.error(`Error fetching file details: ${fileError}`);

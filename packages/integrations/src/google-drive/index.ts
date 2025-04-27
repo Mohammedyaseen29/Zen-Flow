@@ -47,6 +47,23 @@ export const googleDriveIntegration : any =  {
                     throw new Error("No folder ID specified in flow metadata");
                 }
                 
+                // Verify the folder exists and get its details
+                try {
+                    const folderResponse = await drive.files.get({
+                        fileId: folderId,
+                        fields: 'id,name,mimeType'
+                    });
+                    
+                    if (folderResponse.data.mimeType !== 'application/vnd.google-apps.folder') {
+                        throw new Error("The specified ID is not a folder");
+                    }
+                    
+                    console.log(`Setting up webhook for folder: ${folderResponse.data.name} (${folderId})`);
+                } catch (folderError) {
+                    console.error(`Error verifying folder: ${folderError}`);
+                    throw new Error(`Unable to access the specified folder: ${folderError instanceof Error ? folderError.message : "Unknown error"}`);
+                }
+                
                 // If there's an existing channel ID and resource ID, stop watching
                 if (flowMetadata.channelId && flowMetadata.resourceId) {
                     try {
