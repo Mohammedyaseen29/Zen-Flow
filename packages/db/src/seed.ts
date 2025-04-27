@@ -19,7 +19,9 @@ const seed = async () => {
             data:{
                 name: "New File Uploaded",
                 integrationId: googleDrive.id,
-                fields:[]
+                fields:[
+                    {name: 'folderId', type:'select',label:"Folder Id", required:true},
+                ]
             }
         })
         await db.availableActions.create({
@@ -27,7 +29,7 @@ const seed = async () => {
                 name:"Send Notification",
                 integrationId: classRoom.id,
                 fields:[
-                    {name: 'courseId', type: 'string',label:"Course Id", required:true},
+                    {name: 'courseId', type: 'select',label:"Course Id", required:true},
                     { name: 'message', type: 'string', label: 'Message' },
                 ]
             }
